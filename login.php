@@ -171,12 +171,12 @@ if ($user && password_verify($password, $user['password'])) {
             </button>
         </form>
 
-        <div class="text-center mt-4">
+        <!-- <div class="text-center mt-4">
             <p class="text-muted small">
                 Don't have an account? 
                 <a href="register.php" class="text-decoration-none fw-semibold" style="color: var(--primary);">Sign Up</a>
             </p>
-        </div>
+        </div> -->
     </div>
 </div>
 
