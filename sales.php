@@ -442,13 +442,13 @@ $walkin_count  = count(array_filter($sales, fn($s) => empty($s['customer_name'])
 
         <!-- Stats -->
         <div class="stats-grid">
-            <!-- <div class="stat-card teal">
+            <div class="stat-card teal">
                 <div class="stat-icon teal"><i class="bi bi-graph-up-arrow"></i></div>
                 <div class="stat-info">
                     <div class="label">Total Revenue</div>
                     <div class="value"><span class="currency">TZS</span><?= number_format($total_revenue) ?></div>
                 </div>
-            </div> -->
+            </div>
             <div class="stat-card green">
                 <div class="stat-icon green"><i class="bi bi-calendar-check-fill"></i></div>
                 <div class="stat-info">
