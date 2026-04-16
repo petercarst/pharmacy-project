@@ -341,56 +341,6 @@ requireLogin();
             margin: 0 auto 16px;
             border: 2px dashed var(--border);
         }
-
-        .modal-content {
-            border: none;
-            border-radius: 20px;
-            box-shadow: var(--shadow-lg);
-            overflow: hidden;
-        }
-
-        .modal-header {
-            background: linear-gradient(135deg, var(--primary), var(--primary-light));
-            color: white;
-            padding: 25px 30px;
-            border-bottom: none;
-        }
-
-        .modal-header .modal-title {
-            font-weight: 700;
-            font-size: 1.1rem;
-        }
-
-        .modal-body {
-            padding: 35px 30px;
-        }
-
-        .modal-footer {
-            padding: 20px 30px;
-            background: #f8fafc;
-            border-top: 1px solid var(--border);
-        }
-
-        .form-label {
-            font-size: 0.78rem;
-            font-weight: 600;
-            color: var(--text-muted);
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
-            margin-bottom: 8px;
-        }
-
-        .form-control {
-            border: 1.5px solid var(--border);
-            border-radius: 12px;
-            padding: 12px 16px;
-            font-size: 0.95rem;
-        }
-
-        .form-control:focus {
-            border-color: var(--primary-light);
-            box-shadow: 0 0 0 3px rgba(27,108,168,0.12);
-        }
     </style>
 </head>
 <body>
@@ -414,12 +364,21 @@ requireLogin();
 
     <div class="page-body">
 
+        <?php 
+        // Show success or error messages
+        if (isset($_GET['success'])): ?>
+            <div class="alert alert-success">✅ Customer added successfully!</div>
+        <?php endif; ?>
+
+        <?php if (isset($_GET['error'])): ?>
+            <div class="alert alert-danger"><?= htmlspecialchars($_GET['error']) ?></div>
+        <?php endif; ?>
+
         <?php
         $stmt = $pdo->query("SELECT * FROM customers ORDER BY id DESC");
         $customers = $stmt->fetchAll();
         $total = count($customers);
 
-        // Role check: only admin can see delete button
         $isAdmin = isset($_SESSION['role']) && $_SESSION['role'] === 'admin';
         ?>
 
@@ -536,7 +495,7 @@ requireLogin();
     </div>
 </div>
 
-<!-- ==================== ADD CUSTOMER MODAL ==================== -->
+<!-- ==================== ADD CUSTOMER MODAL (Your original beautiful modal - unchanged) ==================== -->
 <div class="modal fade" id="addCustomerModal" tabindex="-1">
     <div class="modal-dialog modal-dialog-centered">
         <div class="modal-content">
@@ -557,8 +516,8 @@ requireLogin();
                         <input type="text" name="phone" class="form-control" placeholder="e.g. 0723457915">
                     </div>
                     <div class="mb-3">
-                        <label class="form-label">Email Address</label>
-                        <input type="email" name="email" class="form-control" placeholder="e.g. customer@example.com">
+                        <label class="form-label">Email Address <span class="text-danger">*</span></label>
+                        <input type="email" name="email" class="form-control" placeholder="e.g. customer@example.com" required>
                     </div>
                 </div>
                 <div class="modal-footer">

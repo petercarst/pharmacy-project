@@ -11,6 +11,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $product_unit   = trim($_POST['product_unit'] ?? '');
     $stock          = (int)$_POST['stock'];
     $selling_price  = (float)$_POST['selling_price'];
+    $unit_per_pack  = (int)$_POST['unit_per_pack'] ?? 1;
     $supplier_name  = trim($_POST['supplier_name'] ?? '');
     $supplier_id    = null;
 
@@ -20,7 +21,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $pdo->beginTransaction();
         
         try {
-            // Handle supplier (create if new)
             if (!empty($supplier_name)) {
                 $stmt = $pdo->prepare("SELECT id FROM suppliers WHERE name = ?");
                 $stmt->execute([$supplier_name]);
@@ -35,11 +35,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 }
             }
 
-            // Insert new item
             $stmt = $pdo->prepare("INSERT INTO items 
-                (item_name, category, product_unit, stock, selling_price, 
+                (item_name, category, product_unit, stock, selling_price, unit_per_pack, 
                  date_delivered, expiration_date, supplier_id) 
-                VALUES (?, ?, ?, ?, ?, ?, ?, ?)");
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)");
 
             $stmt->execute([
                 $item_name,
@@ -47,13 +46,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 $product_unit,
                 $stock,
                 $selling_price,
+                $unit_per_pack,
                 $_POST['date_delivered'] ?? null,
                 $_POST['expiration_date'] ?? null,
                 $supplier_id
             ]);
 
             $pdo->commit();
-            $msg = "New item added successfully!";
+            $msg = "✅ New item added successfully!";
 
         } catch(Exception $e) {
             $pdo->rollBack();
@@ -74,6 +74,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     <link href="https://fonts.googleapis.com/css2?family=Sora:wght@300;400;500;600;700&display=swap" rel="stylesheet">
 
     <style>
+        /* Your original style - unchanged */
         :root {
             --primary: #0f4c75;
             --primary-light: #1b6ca8;
@@ -178,7 +179,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
 <div class="main-content">
 
-    <!-- Top Header -->
     <div class="top-header">
         <div class="header-left">
             <h4>
@@ -220,8 +220,15 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                                placeholder="e.g. 200G, Box, Bottle, Strip">
                     </div>
 
+                    <!-- New field: Unit Per Pack -->
                     <div class="col-md-6">
-                        <label class="form-label">Initial Stock</label>
+                        <label class="form-label">Unit Per Pack</label>
+                        <input type="number" name="unit_per_pack" class="form-control" min="1" value="1">
+                        <small class="text-muted">How many units in one pack/box (e.g. 10 tablets in 1 box)</small>
+                    </div>
+
+                    <div class="col-md-6">
+                        <label class="form-label">Initial Stock (in packs/boxes)</label>
                         <input type="number" name="stock" class="form-control" min="0" value="0">
                     </div>
 
@@ -244,21 +251,18 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     <div class="col-12">
                         <label class="form-label">Supplier Name</label>
                         <input type="text" name="supplier_name" class="form-control" 
-                               placeholder="Type supplier name (e.g. MEDI SUPPLY LTD, LOCAL WHOLESALER)">
+                               placeholder="Type supplier name (e.g. MEDI SUPPLY LTD)">
                         <small class="text-muted">New suppliers will be created automatically</small>
                     </div>
                 </div>
 
-                <div class="mt-5">
-                      <div class="mt-5 d-flex gap-3">
-                         <button type="submit" class="btn btn-add">
-                          <i class="bi bi-plus-lg"></i> Add Item to Inventory
-                         </button>
-
-                        <a href="items_list.php" class="btn btn-secondary px-4 py-2">
-                           ← Back
-                       </a>
-                 </div>
+                <div class="mt-5 d-flex gap-3">
+                    <button type="submit" class="btn btn-add">
+                        <i class="bi bi-plus-lg"></i> Add Item to Inventory
+                    </button>
+                    <a href="items_list.php" class="btn btn-secondary px-4 py-2">
+                        ← Back
+                    </a>
                 </div>
             </form>
         </div>

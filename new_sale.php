@@ -7,14 +7,15 @@ $error = '';
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $item_id     = (int)$_POST['item_id'];
-    $quantity    = (int)$_POST['quantity'];
+    $quantity    = (int)$_POST['quantity'];        // Quantity in smallest unit (e.g. tablets)
     $customer_id = !empty($_POST['customer_id']) ? (int)$_POST['customer_id'] : null;
 
     $pdo->beginTransaction();
 
     try {
-        // Get item details including selling price
-        $stmt = $pdo->prepare("SELECT item_name, stock, selling_price FROM items WHERE id = ?");
+        // Get item details including unit_per_pack
+        $stmt = $pdo->prepare("SELECT item_name, stock, selling_price, unit_per_pack 
+                               FROM items WHERE id = ?");
         $stmt->execute([$item_id]);
         $item = $stmt->fetch();
 
@@ -22,24 +23,32 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             throw new Exception("Item not found!");
         }
 
-        if ($item['stock'] < $quantity) {
-            throw new Exception("Not enough stock! Available: " . $item['stock']);
+        $unit_per_pack = max(1, (int)$item['unit_per_pack']);   // How many tablets in one box
+
+        // Calculate how many full boxes we need to deduct
+        $boxes_to_deduct = ceil($quantity / $unit_per_pack);
+
+        if ($item['stock'] < $boxes_to_deduct) {
+            throw new Exception("Not enough stock! Available: " . $item['stock'] . " boxes");
         }
 
-        // Calculate total using real selling price
+        // Calculate total price (per smallest unit)
         $price_per_unit = $item['selling_price'] ?? 1000;
         $total = $quantity * $price_per_unit;
 
-        // Record the sale
+        // Record the sale (we record actual quantity sold, e.g. 4 tablets)
         $stmt = $pdo->prepare("INSERT INTO sales (item_id, quantity, total, customer_id) VALUES (?, ?, ?, ?)");
         $stmt->execute([$item_id, $quantity, $total, $customer_id]);
 
-        // Decrease stock
+        // Decrease stock in BOXES
         $stmt = $pdo->prepare("UPDATE items SET stock = stock - ? WHERE id = ?");
-        $stmt->execute([$quantity, $item_id]);
+        $stmt->execute([$boxes_to_deduct, $item_id]);
 
         $pdo->commit();
-        $message = "Sale completed successfully! Stock updated.";
+
+        $message = "Sale completed successfully!<br>
+                    Sold: $quantity units<br>
+                    Deducted: $boxes_to_deduct box(es) from stock";
 
     } catch (Exception $e) {
         $pdo->rollBack();
@@ -155,12 +164,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             font-weight: 600;
             font-size: 1.05rem;
         }
-
-        .stock-info {
-            font-size: 0.82rem;
-            color: #10b981;
-            font-weight: 500;
-        }
     </style>
 </head>
 <body>
@@ -169,15 +172,32 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
 <div class="main-content">
 
-    <!-- Top Header -->
-    <div class="top-header">
-        <div class="header-left">
-            <h4>
-                <span class="icon-wrap"><i class="bi bi-cart-plus"></i></span>
-                New Sale
-            </h4>
-        </div>
+<div class="top-header">
+    <div class="header-left">
+        <h4>
+            <span class="icon-wrap"><i class="bi bi-cart-plus"></i></span>
+            New Sale
+        </h4>
     </div>
+
+<a href="sales.php" style="
+    display: flex; align-items: center; gap: 7px;
+    background: #f1f5f9;
+    border: 1.5px solid #cbd5e1;
+    color: #64748b;
+    padding: 9px 18px;
+    border-radius: 50px;
+    font-family: 'Sora', sans-serif;
+    font-size: 0.83rem;
+    font-weight: 600;
+    text-decoration: none;
+    transition: all 0.18s;
+    " onmouseover="this.style.background='#99a3af';this.style.color='#334155'"
+     onmouseout="this.style.background='#c7d0da';this.style.color='#265392'">
+        <i class="bi bi-arrow-left"></i> Back to Sales
+    </a>
+
+</div>
 
     <div class="p-4 p-md-5">
 
@@ -199,24 +219,27 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                         <select name="item_id" class="form-select" required>
                             <option value="">-- Choose Item --</option>
                             <?php
-                            $items = $pdo->query("SELECT id, item_name, stock, selling_price 
+                            $items = $pdo->query("SELECT id, item_name, stock, selling_price, unit_per_pack 
                                                 FROM items 
                                                 ORDER BY item_name")->fetchAll();
                             foreach($items as $item):
+                                $pack_size = ($item['unit_per_pack'] > 1) ? " (".$item['unit_per_pack']." per box)" : "";
                                 $price_display = number_format($item['selling_price'] ?? 1000);
                             ?>
                             <option value="<?= $item['id'] ?>">
                                 <?= htmlspecialchars($item['item_name']) ?> 
-                                — TZS <?= $price_display ?> 
-                                (Stock: <?= $item['stock'] ?>)
+                                — TZS <?= $price_display ?>
+                                <?= $pack_size ?> 
+                                (Stock: <?= $item['stock'] ?> boxes)
                             </option>
                             <?php endforeach; ?>
                         </select>
                     </div>
 
                     <div class="col-md-6">
-                        <label class="form-label required">Quantity</label>
+                        <label class="form-label required">Quantity (in smallest unit)</label>
                         <input type="number" name="quantity" class="form-control" min="1" required>
+                        <small class="text-muted">Example: If 1 box = 10 tablets, enter 4 for 4 tablets</small>
                     </div>
 
                     <div class="col-md-6">
@@ -237,11 +260,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     <button type="submit" class="btn btn-sale w-100">
                         <i class="bi bi-cart-check"></i> Complete Sale & Update Stock
                     </button>
-                    <div class="mt-3">
-                         <a href="sales.php" class="btn btn-secondary w-100">
-                            ← Back
-                         </a>
-                  </div>
                 </div>
             </form>
         </div>

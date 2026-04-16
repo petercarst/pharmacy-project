@@ -399,6 +399,16 @@
             </a>
         </li>
 
+        <?php if (isAdmin()): ?>
+        <li>
+          <a href="reports.php" class="<?= $currentPage=='reports.php' ? 'active' : '' ?>">
+           <span class="nav-icon"><i class="bi bi-file-earmark-bar-graph-fill"></i></span>
+            Reports
+          <span class="sb-badge">PDF</span>
+         </a>
+        </li>
+       <?php endif; ?>
+
         <!-- Expenses: ADMIN ONLY -->
         <?php if (isAdmin()): ?>
         <li>

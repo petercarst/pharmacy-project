@@ -15,6 +15,7 @@ if (isset($_GET['id']) && $_SERVER['REQUEST_METHOD'] === 'POST') {
         item_name = ?, 
         category = ?, 
         product_unit = ?, 
+        unit_per_pack = ?,
         date_delivered = ?, 
         expiration_date = ?, 
         supplier_id = ?, 
@@ -28,6 +29,7 @@ if (isset($_GET['id']) && $_SERVER['REQUEST_METHOD'] === 'POST') {
         $_POST['item_name'] ?? '',
         $_POST['category'] ?? '',
         $_POST['product_unit'] ?? '',
+        (int)($_POST['unit_per_pack'] ?? 1),
         $_POST['date_delivered'] ?? null,
         $_POST['expiration_date'] ?? null,
         $supplier_id,
@@ -181,6 +183,13 @@ value="<?= htmlspecialchars($item['category']) ?>">
 <label class="form-label">Product Unit</label>
 <input type="text" name="product_unit" class="form-control"
 value="<?= htmlspecialchars($item['product_unit']) ?>">
+</div>
+
+<div class="col-12">
+    <label class="form-label">Unit Per Pack</label>
+    <input type="number" name="unit_per_pack" class="form-control" min="1" 
+           value="<?= htmlspecialchars($item['unit_per_pack'] ?? 1) ?>">
+    <small class="text-muted">How many units in one pack (e.g. 10 tablets in 1 box)</small>
 </div>
 
 <div class="col-md-6">

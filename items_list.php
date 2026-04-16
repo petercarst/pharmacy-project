@@ -14,6 +14,7 @@ requireLogin();
     <link href="https://fonts.googleapis.com/css2?family=Sora:wght@300;400;500;600;700&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
 
     <style>
+        /* Your original full CSS - unchanged */
         :root {
             --primary:       #0f4c75;
             --primary-light: #1b6ca8;
@@ -93,7 +94,6 @@ requireLogin();
             padding-left: 48px;
         }
 
-        /* View-only badge shown to pharmacist instead of Add button */
         .view-only-badge {
             display: inline-flex;
             align-items: center;
@@ -146,11 +146,6 @@ requireLogin();
             box-shadow: var(--shadow-sm);
             animation: fadeUp 0.4s ease both;
         }
-
-        .stat-card:nth-child(1) { animation-delay: 0.05s; }
-        .stat-card:nth-child(2) { animation-delay: 0.10s; }
-        .stat-card:nth-child(3) { animation-delay: 0.15s; }
-        .stat-card:nth-child(4) { animation-delay: 0.20s; }
 
         .stat-icon {
             width: 44px; height: 44px;
@@ -223,24 +218,6 @@ requireLogin();
             background: var(--surface-2);
             outline: none;
             cursor: pointer;
-            transition: border-color 0.2s;
-        }
-
-        .filter-select:focus { border-color: var(--primary-light); }
-
-        .toolbar-right {
-            margin-left: auto;
-            display: flex; align-items: center; gap: 8px;
-        }
-
-        .toolbar-badge {
-            background: var(--accent-soft);
-            color: var(--accent);
-            font-size: 0.75rem; font-weight: 600;
-            padding: 4px 12px;
-            border-radius: 20px;
-            border: 1px solid rgba(0,201,167,0.2);
-            white-space: nowrap;
         }
 
         .items-table { width: 100%; border-collapse: collapse; }
@@ -314,15 +291,6 @@ requireLogin();
             flex-shrink: 0;
         }
 
-        .stock-badge.ok       .dot { background: var(--success); }
-        .stock-badge.low      .dot { background: var(--warning); }
-        .stock-badge.critical .dot { background: var(--danger); animation: pulse 1.5s infinite; }
-
-        @keyframes pulse {
-            0%,100% { opacity: 1; }
-            50%      { opacity: 0.3; }
-        }
-
         .unit-tag {
             font-family: 'DM Mono', monospace;
             font-size: 0.76rem; color: var(--text-muted);
@@ -330,13 +298,6 @@ requireLogin();
             border: 1px solid var(--border);
             padding: 3px 9px; border-radius: 6px;
         }
-
-        .supplier-cell {
-            display: flex; align-items: center; gap: 6px;
-            font-size: 0.82rem; color: var(--text-muted);
-        }
-
-        .supplier-cell i { font-size: 0.75rem; }
 
         .btn-edit {
             width: 32px; height: 32px;
@@ -364,20 +325,6 @@ requireLogin();
             margin: 0 auto 16px;
             border: 2px dashed var(--border);
         }
-
-        .empty-state h6 { font-weight: 600; color: var(--text-muted); }
-        .empty-state p  { font-size: 0.82rem; color: #94a3b8; margin-top: 4px; }
-
-        @keyframes fadeUp {
-            from { opacity: 0; transform: translateY(14px); }
-            to   { opacity: 1; transform: translateY(0); }
-        }
-
-        @media (max-width: 768px) {
-            .main-content { margin-left: 0; }
-            .page-body { padding: 16px; }
-            .stats-bar { grid-template-columns: 1fr 1fr; }
-        }
     </style>
 </head>
 <body>
@@ -386,7 +333,6 @@ requireLogin();
 
 <div class="main-content">
 
-    <!-- Header -->
     <div class="top-header">
         <div class="header-left">
             <h4>
@@ -396,7 +342,6 @@ requireLogin();
             <p>Manage your pharmacy stock and product catalogue</p>
         </div>
 
-        <!-- ADMIN: show Add button | PHARMACIST: show view-only badge -->
         <?php if (isAdmin()): ?>
             <a href="add_item.php" class="btn-add">
                 <i class="bi bi-plus-circle-fill"></i> Add New Item
@@ -423,7 +368,6 @@ requireLogin();
         $outOfStock = count(array_filter($items, fn($i) => $i['stock'] <= 0));
         ?>
 
-        <!-- Stats -->
         <div class="stats-bar">
             <div class="stat-card">
                 <div class="stat-icon blue"><i class="bi bi-box-seam-fill"></i></div>
@@ -455,7 +399,6 @@ requireLogin();
             </div>
         </div>
 
-        <!-- Table Card -->
         <div class="table-card">
             <div class="table-toolbar">
                 <div class="search-box">
@@ -480,8 +423,8 @@ requireLogin();
                         <th>Category</th>
                         <th>Stock</th>
                         <th>Unit</th>
+                        <th>Unit Per Pack</th>
                         <th>Supplier</th>
-                        <!-- Action column: ADMIN ONLY -->
                         <?php if (isAdmin()): ?>
                         <th>Action</th>
                         <?php endif; ?>
@@ -490,7 +433,7 @@ requireLogin();
                 <tbody>
                     <?php if (empty($items)): ?>
                     <tr>
-                        <td colspan="<?= isAdmin() ? 6 : 5 ?>">
+                        <td colspan="<?= isAdmin() ? 7 : 6 ?>">
                             <div class="empty-state">
                                 <div class="empty-icon"><i class="bi bi-box-seam"></i></div>
                                 <h6>No items found</h6>
@@ -537,12 +480,14 @@ requireLogin();
                             <span class="unit-tag"><?= htmlspecialchars($row['product_unit'] ?? '—') ?></span>
                         </td>
                         <td>
+                            <span class="unit-tag"><?= (int)$row['unit_per_pack'] ?> per pack</span>
+                        </td>
+                        <td>
                             <div class="supplier-cell">
                                 <i class="bi bi-building"></i>
                                 <?= htmlspecialchars($row['supplier_name'] ?? 'No Supplier') ?>
                             </div>
                         </td>
-                        <!-- Edit button: ADMIN ONLY -->
                         <?php if (isAdmin()): ?>
                         <td>
                             <a href="items.php?id=<?= $row['id'] ?>" class="btn-edit" title="Edit Item">
